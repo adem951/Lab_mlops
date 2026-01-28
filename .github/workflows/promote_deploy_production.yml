@@ -59,25 +59,33 @@ jobs:
                   print(f"Available versions: {[mv.version for mv in all_versions]}")
                   sys.exit(1)
               
-              # Add promotion tags for traceability
+              # Add promotion tags for traceability (Staging -> Production)
               client.set_model_version_tag(
                   name=name,
                   version=version,
-                  key="promoted_to_production",
+                  key='promoted_to_production',
                   value=datetime.now().isoformat()
               )
               client.set_model_version_tag(
                   name=name,
                   version=version,
-                  key="promotion_run_id",
+                  key='promotion_workflow_run_id',
                   value=os.environ.get('GITHUB_RUN_ID', 'manual')
               )
               client.set_model_version_tag(
                   name=name,
                   version=version,
-                  key="promotion_commit",
+                  key='promotion_commit',
                   value=os.environ.get('GITHUB_SHA', 'unknown')
               )
+              # Tag: Stage transition proof
+              client.set_model_version_tag(
+                  name=name,
+                  version=version,
+                  key='stage_transition',
+                  value='Staging -> Production'
+              )
+              print(f'Tags added: Staging -> Production transition recorded')
               
               # Transition version to Production
               client.transition_model_version_stage(
