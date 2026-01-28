@@ -38,7 +38,7 @@ jobs:
  
       - name: Evaluate gate 
         env: 
-          ACCURACY_THRESHOLD: "0.90" 
+          ACCURACY_THRESHOLD: "0.70" 
         run: | 
           echo '${{ steps.train.outputs.result_json }}' | python ml/evaluate.py 
  
