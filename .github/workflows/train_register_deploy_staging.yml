@@ -32,102 +32,15 @@ jobs:
           MLFLOW_TRACKING_TOKEN: ${{ secrets.DAGSHUB_TOKEN }} 
           MODEL_NAME: churn-model 
           DATA_VERSION: "dvc:v1"
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_SHA: ${{ github.sha }}
         run: | 
           python ml/train_and_register.py | tee train_out.json 
           echo "result_json=$(cat train_out.json)" >> "$GITHUB_OUTPUT" 
-          
-          # Add staging registration tags for traceability
-          cat > tag_staging.py << 'EOF'
-          import os, json, mlflow
-          from datetime import datetime
-          from mlflow.tracking import MlflowClient
-          
-          mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI'])
-          token = os.environ['MLFLOW_TRACKING_TOKEN']
-          os.environ['MLFLOW_TRACKING_USERNAME'] = token
-          os.environ['MLFLOW_TRACKING_PASSWORD'] = token
-          
-          with open('train_out.json') as f:
-              result = json.load(f)
-          
-          client = MlflowClient()
-          version = result['model_version']
-          
-          # Tag: Registered to Staging
-          client.set_model_version_tag(
-              name='churn-model',
-              version=str(version),
-              key='registered_to_staging',
-              value=datetime.now().isoformat()
-          )
-          # Tag: Staging workflow run
-          client.set_model_version_tag(
-              name='churn-model',
-              version=str(version),
-              key='staging_workflow_run_id',
-              value=os.environ.get('GITHUB_RUN_ID', 'unknown')
-          )
-          # Tag: Commit that trained this model
-          client.set_model_version_tag(
-              name='churn-model',
-              version=str(version),
-              key='training_commit',
-              value=os.environ.get('GITHUB_SHA', 'unknown')
-          )
-          # Tag: Model accuracy
-          client.set_model_version_tag(
-              name='churn-model',
-              version=str(version),
-              key='candidate_accuracy',
-              value=str(result['accuracy'])
-          )
-          print(f"Added staging tags to version {version}")
-          EOF
-          python tag_staging.py
  
       - name: Evaluate gate 
-        id: gate
         env: 
           ACCURACY_THRESHOLD: "0.70" 
-          MLFLOW_TRACKING_URI: ${{ secrets.DAGSHUB_MLFLOW_TRACKING_URI }} 
-          MLFLOW_TRACKING_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
         run: | 
-          echo '${{ steps.train.outputs.result_json }}' | python ml/evaluate.py
-          
-          # Add quality gate passed tag
-          cat > tag_gate.py << 'EOF'
-          import os, json, mlflow
-          from datetime import datetime
-          from mlflow.tracking import MlflowClient
-          
-          mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI'])
-          token = os.environ['MLFLOW_TRACKING_TOKEN']
-          os.environ['MLFLOW_TRACKING_USERNAME'] = token
-          os.environ['MLFLOW_TRACKING_PASSWORD'] = token
-          
-          result = json.loads('''${{ steps.train.outputs.result_json }}''')
-          
-          client = MlflowClient()
-          version = result['model_version']
-          
-          # Tag: Quality gate passed
-          client.set_model_version_tag(
-              name='churn-model',
-              version=str(version),
-              key='quality_gate_passed',
-              value='true'
-          )
-          client.set_model_version_tag(
-              name='churn-model',
-              version=str(version),
-              key='quality_gate_timestamp',
-              value=datetime.now().isoformat()
-          )
-          print(f"Quality gate PASSED - tagged version {version}")
-          EOF
-          python tag_gate.py 
+          echo '${{ steps.train.outputs.result_json }}' | python ml/evaluate.py 
  
   deploy_staging: 
     needs: train_register 

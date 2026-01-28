@@ -8,7 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split 
 from sklearn.metrics import accuracy_score 
 
-# MLOps Pipeline - Task 1: Candidate to Staging with full traceability
+# MLOps Pipeline - Task 1: Candidate to Staging
 MODEL_NAME = os.getenv("MODEL_NAME", "churn-model") 
  
 def main(): 

@@ -28,12 +28,9 @@ jobs:
           MLFLOW_TRACKING_TOKEN: ${{ secrets.DAGSHUB_TOKEN }} 
           MODEL_NAME: churn-model 
           MODEL_VERSION: ${{ inputs.model_version }} 
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_SHA: ${{ github.sha }}
-        run: |
-          cat > promote.py << 'EOF'
-          import os, mlflow, sys
-          from datetime import datetime
+        run: | 
+          python -c "
+          import os, mlflow
           from mlflow.tracking import MlflowClient
           
           mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI'])
@@ -45,62 +42,15 @@ jobs:
           name = os.environ['MODEL_NAME']
           version = os.environ['MODEL_VERSION']
           
-          # List all versions to check if target version exists
-          try:
-              all_versions = client.search_model_versions(f"name='{name}'")
-              print(f"Available versions for {name}:")
-              for mv in all_versions:
-                  print(f"  - Version {mv.version} (Stage: {mv.current_stage})")
-              
-              # Check if requested version exists
-              version_exists = any(mv.version == version for mv in all_versions)
-              if not version_exists:
-                  print(f"ERROR: Version {version} does not exist for model {name}")
-                  print(f"Available versions: {[mv.version for mv in all_versions]}")
-                  sys.exit(1)
-              
-              # Add promotion tags for traceability (Staging -> Production)
-              client.set_model_version_tag(
-                  name=name,
-                  version=version,
-                  key='promoted_to_production',
-                  value=datetime.now().isoformat()
-              )
-              client.set_model_version_tag(
-                  name=name,
-                  version=version,
-                  key='promotion_workflow_run_id',
-                  value=os.environ.get('GITHUB_RUN_ID', 'manual')
-              )
-              client.set_model_version_tag(
-                  name=name,
-                  version=version,
-                  key='promotion_commit',
-                  value=os.environ.get('GITHUB_SHA', 'unknown')
-              )
-              # Tag: Stage transition proof
-              client.set_model_version_tag(
-                  name=name,
-                  version=version,
-                  key='stage_transition',
-                  value='Staging -> Production'
-              )
-              print(f'Tags added: Staging -> Production transition recorded')
-              
-              # Transition version to Production
-              client.transition_model_version_stage(
-                  name=name,
-                  version=version,
-                  stage='Production',
-                  archive_existing_versions=True
-              )
-              print(f"✓ Promoted {name} v{version} to Production")
-              print(f"  Tagged with promotion metadata for traceability")
-          except Exception as e:
-              print(f"ERROR: {e}")
-              sys.exit(1)
-          EOF
-          python promote.py 
+          # Transition version to Production (optionally archive existing)
+          client.transition_model_version_stage(
+              name=name,
+              version=version,
+              stage='Production',
+              archive_existing_versions=True
+          )
+          print(f'Promoted {name} v{version} to Production')
+          " 
  
   deploy_production: 
     needs: promote 
