@@ -39,7 +39,7 @@ jobs:
           echo "result_json=$(cat train_out.json)" >> "$GITHUB_OUTPUT" 
           
           # Add staging registration tags for traceability
-          python - << 'EOF'
+          cat > tag_staging.py << 'EOF'
           import os, json, mlflow
           from datetime import datetime
           from mlflow.tracking import MlflowClient
@@ -53,7 +53,7 @@ jobs:
               result = json.load(f)
           
           client = MlflowClient()
-          version = result['model_version']  # Changed from 'version' to 'model_version'
+          version = result['model_version']
           
           # Tag: Registered to Staging
           client.set_model_version_tag(
@@ -85,6 +85,7 @@ jobs:
           )
           print(f"Added staging tags to version {version}")
           EOF
+          python tag_staging.py
  
       - name: Evaluate gate 
         id: gate
@@ -96,7 +97,7 @@ jobs:
           echo '${{ steps.train.outputs.result_json }}' | python ml/evaluate.py
           
           # Add quality gate passed tag
-          python - << 'EOF'
+          cat > tag_gate.py << 'EOF'
           import os, json, mlflow
           from datetime import datetime
           from mlflow.tracking import MlflowClient
@@ -109,7 +110,7 @@ jobs:
           result = json.loads('''${{ steps.train.outputs.result_json }}''')
           
           client = MlflowClient()
-          version = result['model_version']  # Changed from 'version' to 'model_version'
+          version = result['model_version']
           
           # Tag: Quality gate passed
           client.set_model_version_tag(
@@ -125,7 +126,8 @@ jobs:
               value=datetime.now().isoformat()
           )
           print(f"Quality gate PASSED - tagged version {version}")
-          EOF 
+          EOF
+          python tag_gate.py 
  
   deploy_staging: 
     needs: train_register 
