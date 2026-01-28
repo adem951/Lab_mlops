@@ -1,0 +1,352 @@
+<!doctype html>
+<html> 
+  <head> 
+    <meta charset="utf-8" /> 
+    <title>Model Stage Demo</title> 
+  </head> 
+  <body> 
+    <h1>Model Promotion Demo</h1> 
+    <p>Calls /health and /predict on the backend.</p> 
+ 
+    <button id="health">Check Health</button> 
+    <pre id="healthOut"></pre> 
+ 
+    <button id="predict">Send Predict</button> 
+    <pre id="predOut"></pre> 
+ 
+    <script> 
+      const backend = "http://localhost:8000"; 
+ 
+      document.getElementById("health").onclick = async () => { 
+        const r = await fetch(`${backend}/health`); 
+        document.getElementById("healthOut").textContent = JSON.stringify(await r.json(), null, 2); 
+      }; 
+ 
+      document.getElementById("predict").onclick = async () => { 
+        // 10 features expected 
+        const payload = { features: [[0.1,0.2,0.0,0.4,0.5,0.0,0.2,0.1,0.3,0.9]] }; 
+        const r = await fetch(`${backend}/predict`, { 
+          method: "POST", 
+          headers: { "Content-Type": "application/json" }, 
+          body: JSON.stringify(payload), 
+        }); 
+        document.getElementById("predOut").textContent = JSON.stringify(await r.json(), null, 2); 
+      }; 
+    </script> 
+  </body>
+</html>
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .status-staging {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-production {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result.success {
+            background-color: #d1fae5;
+            border: 2px solid #10b981;
+        }
+
+        .result.error {
+            background-color: #fee2e2;
+            border: 2px solid #ef4444;
+        }
+
+        .result h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .result p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .prediction-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .prediction-churn {
+            color: #dc2626;
+        }
+
+        .prediction-no-churn {
+            color: #059669;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .api-url {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .api-url label {
+            margin-bottom: 5px;
+        }
+
+        .api-url input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 ML Model Prediction</h1>
+        <p class="subtitle">Customer Churn Prediction Dashboard</p>
+        
+        <div id="modelStage" class="status-badge status-staging">
+            Loading...
+        </div>
+
+        <div class="api-url">
+            <label for="apiUrl">Backend API URL:</label>
+            <input type="text" id="apiUrl" value="http://localhost:8000" placeholder="http://localhost:8000">
+        </div>
+
+        <form id="predictionForm">
+            <div class="form-group">
+                <label>Enter 10 feature values (0-10):</label>
+                <div class="input-grid">
+                    <input type="number" class="feature" placeholder="F1" step="0.1" value="5.0" required>
+                    <input type="number" class="feature" placeholder="F2" step="0.1" value="3.2" required>
+                    <input type="number" class="feature" placeholder="F3" step="0.1" value="7.5" required>
+                    <input type="number" class="feature" placeholder="F4" step="0.1" value="2.1" required>
+                    <input type="number" class="feature" placeholder="F5" step="0.1" value="8.3" required>
+                    <input type="number" class="feature" placeholder="F6" step="0.1" value="4.7" required>
+                    <input type="number" class="feature" placeholder="F7" step="0.1" value="6.1" required>
+                    <input type="number" class="feature" placeholder="F8" step="0.1" value="3.9" required>
+                    <input type="number" class="feature" placeholder="F9" step="0.1" value="5.5" required>
+                    <input type="number" class="feature" placeholder="F10" step="0.1" value="7.2" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="predictBtn">
+                🔮 Predict
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Making prediction...</p>
+        </div>
+
+        <div class="result" id="result">
+            <h3>Prediction Result</h3>
+            <div class="prediction-value" id="predictionValue"></div>
+            <p><strong>Model Stage:</strong> <span id="resultStage"></span></p>
+            <p><strong>Model Name:</strong> <span id="resultModel"></span></p>
+        </div>
+    </div>
+
+    <script>
+        const apiUrlInput = document.getElementById('apiUrl');
+        const form = document.getElementById('predictionForm');
+        const resultDiv = document.getElementById('result');
+        const loadingDiv = document.getElementById('loading');
+        const modelStageDiv = document.getElementById('modelStage');
+        const predictionValueDiv = document.getElementById('predictionValue');
+        const resultStageSpan = document.getElementById('resultStage');
+        const resultModelSpan = document.getElementById('resultModel');
+
+        // Load model info on page load
+        async function loadModelInfo() {
+            try {
+                const response = await fetch(`${apiUrlInput.value}/model-info`);
+                const data = await response.json();
+                
+                const stage = data.model_stage || 'Unknown';
+                modelStageDiv.textContent = `📍 Environment: ${stage}`;
+                modelStageDiv.className = `status-badge status-${stage.toLowerCase()}`;
+            } catch (error) {
+                console.error('Error loading model info:', error);
+                modelStageDiv.textContent = '⚠️ Cannot connect to backend';
+                modelStageDiv.className = 'status-badge';
+                modelStageDiv.style.backgroundColor = '#fee2e2';
+                modelStageDiv.style.color = '#991b1b';
+            }
+        }
+
+        // Load model info on page load and when API URL changes
+        loadModelInfo();
+        apiUrlInput.addEventListener('change', loadModelInfo);
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get all feature values
+            const features = Array.from(document.querySelectorAll('.feature'))
+                .map(input => parseFloat(input.value));
+
+            // Show loading
+            loadingDiv.classList.add('show');
+            resultDiv.classList.remove('show');
+
+            try {
+                const response = await fetch(`${apiUrlInput.value}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        features: [features]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Display result
+                const prediction = data.predictions[0];
+                predictionValueDiv.textContent = prediction === 1 ? '⚠️ CHURN' : '✅ NO CHURN';
+                predictionValueDiv.className = prediction === 1 ? 'prediction-value prediction-churn' : 'prediction-value prediction-no-churn';
+                
+                resultStageSpan.textContent = data.model_stage;
+                resultModelSpan.textContent = data.model_name;
+
+                resultDiv.className = 'result success show';
+            } catch (error) {
+                console.error('Prediction error:', error);
+                resultDiv.innerHTML = `
+                    <h3>Error</h3>
+                    <p>${error.message}</p>
+                    <p>Please make sure the backend API is running at ${apiUrlInput.value}</p>
+                `;
+                resultDiv.className = 'result error show';
+            } finally {
+                loadingDiv.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+services: 
+  backend-production: 
+    build: ../backend 
+    ports: 
+      - "8001:8000" 
+    environment: 
+      MODEL_NAME: churn-model 
+      MODEL_STAGE: Production 
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI} 
+      MLFLOW_TRACKING_TOKEN: ${MLFLOW_TRACKING_TOKEN}
